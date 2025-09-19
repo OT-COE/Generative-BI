@@ -22,10 +22,10 @@ COPY . .
 RUN mkdir -p chroma_db logs
 
 # Expose Streamlit port
-EXPOSE 8501
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 # Run the application
-CMD ["python", "start_genbi.py"]
+CMD ["streamlit", "run", "start_genbi.py", "--server.port=8000", "--server.address=0.0.0.0"]
