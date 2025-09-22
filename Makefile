@@ -34,3 +34,4 @@ clean:
 up: build run
 
 down: stop clean
+
