@@ -1,11 +1,14 @@
-REGISTRY=registry.ldc.opstree.dev
-IMAGE_NAME=ai-coe/genbi
-IMAGE_TAG=v1
+REGISTRY := registry.ldc.opstree.dev
+IMAGE_NAME := ai-coe/genbi
+IMAGE_TAG := v1
+IMAGE := $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 CONTAINER_NAME=genbi
 
 build:
-	docker build -t ${REGISTRY}/$(IMAGE_NAME):${IMAGE_TAG} .
+	docker build -t $(IMAGE) .
 
+push:
+	docker push $(IMAGE)
 run:
 	@if [ $$(docker ps -q -f name=$(CONTAINER_NAME)) ]; then \
 		echo "Stopping existing container..."; \
