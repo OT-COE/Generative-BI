@@ -25,7 +25,8 @@ RUN mkdir -p chroma_db logs
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+  CMD curl --fail http://localhost:8000/_stcore/health || exit 1
 
 # Run the application
 CMD ["streamlit", "run", "start_genbi.py", "--server.port=8000", "--server.address=0.0.0.0"]
