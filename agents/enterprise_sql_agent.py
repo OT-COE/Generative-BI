@@ -93,9 +93,8 @@ class EnterpriseSQLAgent:
                 if table_name:
                     relevant_tables.add(table_name)
             
-            # Get full schema for relevant tables
-            if not hasattr(self, '_full_schema') or not self._full_schema:
-                self._full_schema = db_manager.get_table_schema()
+            # Always get fresh schema - don't cache to avoid stale data
+            self._full_schema = db_manager.get_table_schema()
             
             comprehensive_schema = {}
             

@@ -1,6 +1,6 @@
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
-from langchain.schema import BaseOutputParser
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import BaseOutputParser
 from langgraph.graph import StateGraph, END
 from typing import Dict, List, Any, TypedDict
 import json
