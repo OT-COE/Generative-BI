@@ -171,6 +171,37 @@ class DatabaseConnectionManager:
             logger.error(f"Failed to get sample data from {table_name}: {str(e)}")
             return pd.DataFrame()
     
+    def connect_predefined(self, db_name: str, connection_name: str = "default") -> bool:
+        """Connect using predefined database connection string"""
+        try:
+            predefined_dbs = settings.predefined_databases
+            if db_name not in predefined_dbs:
+                raise ValueError(f"Database {db_name} not found in predefined databases")
+            
+            connection_string = predefined_dbs[db_name]
+            engine = create_engine(
+                connection_string,
+                pool_size=10,
+                max_overflow=20,
+                pool_pre_ping=True,
+                pool_recycle=3600
+            )
+            
+            # Test connection
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            
+            self.engines[connection_name] = engine
+            Session = sessionmaker(bind=engine)
+            self.sessions[connection_name] = Session()
+            
+            logger.info(f"Successfully connected to predefined database: {db_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to connect to {db_name}: {str(e)}")
+            return False
+    
     def close_connections(self):
         """Close all database connections"""
         for session in self.sessions.values():
