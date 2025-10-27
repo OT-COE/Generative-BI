@@ -10,6 +10,7 @@ from datetime import datetime
 from config.settings import settings
 from ui_components.setup_wizard import setup_wizard
 from ui_components.query_interface import query_interface
+from semantic_layer.enhanced_semantic_layer import enhanced_semantic_layer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -138,6 +139,12 @@ def initialize_session_state():
         # UI state
         st.session_state.selected_db_type = "PostgreSQL"
         st.session_state.sample_queries = []
+        
+        # Clear all semantic layer data on app start
+        try:
+            enhanced_semantic_layer.clear_collections()
+        except:
+            pass
 
 def main():
     """Main application entry point"""
@@ -169,3 +176,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
