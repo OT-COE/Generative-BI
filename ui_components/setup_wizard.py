@@ -89,11 +89,45 @@ class SetupWizard:
             st.subheader(f"📋 {selected_db_type} Connection Details")
             
             if selected_db_type == "PostgreSQL":
-                host = st.text_input("Host", value=settings.postgres_host or "localhost")
-                port = st.number_input("Port", value=settings.postgres_port or 5432, min_value=1, max_value=65535)
-                database = st.text_input("Database", value=settings.postgres_db or "")
-                username = st.text_input("Username", value=settings.postgres_user or "")
-                password = st.text_input("Password", type="password")
+                # Check for predefined databases
+                predefined_dbs = settings.predefined_databases
+                
+                if predefined_dbs:
+                    st.info("🎯 Select from predefined databases or enter custom connection details")
+                    
+                    use_predefined = st.radio(
+                        "Connection method:",
+                        ["📋 Select from predefined databases", "✏️ Enter custom details"],
+                        key="pg_connection_method"
+                    )
+                    
+                    if use_predefined == "📋 Select from predefined databases":
+                        selected_db = st.selectbox(
+                            "Select Database:",
+                            list(predefined_dbs.keys()),
+                            key="predefined_db_selection"
+                        )
+                        
+                        # Connection info is available but not displayed for security
+                        
+                        # Store selection for connection test
+                        st.session_state.selected_predefined_db = selected_db
+                        
+                    else:
+                        # Original custom connection fields
+                        host = st.text_input("Host", value=settings.postgres_host or "localhost")
+                        port = st.number_input("Port", value=settings.postgres_port or 5432, min_value=1, max_value=65535)
+                        database = st.text_input("Database", value=settings.postgres_db or "")
+                        username = st.text_input("Username", value=settings.postgres_user or "")
+                        password = st.text_input("Password", type="password")
+                else:
+                    # No predefined databases, show custom fields
+                    st.warning("No predefined databases found. Please enter connection details.")
+                    host = st.text_input("Host", value=settings.postgres_host or "localhost")
+                    port = st.number_input("Port", value=settings.postgres_port or 5432, min_value=1, max_value=65535)
+                    database = st.text_input("Database", value=settings.postgres_db or "")
+                    username = st.text_input("Username", value=settings.postgres_user or "")
+                    password = st.text_input("Password", type="password")
                 
             elif selected_db_type == "MySQL":
                 host = st.text_input("Host", value=settings.mysql_host or "localhost")
@@ -134,15 +168,46 @@ class SetupWizard:
             if success:
                 st.success("✅ Connection successful!")
                 if connect_and_continue:
-                    # Store connection details
-                    st.session_state.connection_details = {
-                        'db_type': selected_db_type,
-                        'params': {k: v for k, v in locals().items() 
-                                 if k not in ['test_connection', 'connect_and_continue', 'selected_db_type', 'success']}
-                    }
-                    st.session_state.connected = True
-                    st.session_state.wizard_step = 1
-                    st.rerun()
+                    # Close any existing connections first
+                    db_manager.close_connections()
+                    # Clear metadata cache
+                    db_manager.metadata_cache.clear()
+                    
+                    # Re-establish connection with selected database
+                    if selected_db_type == "PostgreSQL" and hasattr(st.session_state, 'selected_predefined_db'):
+                        # Use predefined database with default connection name
+                        final_success = db_manager.connect_predefined(st.session_state.selected_predefined_db, "default")
+                        connection_name = "default"
+                    else:
+                        # Use custom connection
+                        final_success = self._test_database_connection(selected_db_type, locals())
+                        connection_name = "default"
+                    
+                    if final_success:
+                        # Clear any cached schema and semantic layer information
+                        keys_to_clear = ['schema_analysis_done', 'schema_info', 'semantic_layer_built', 'semantic_method', 'generated_metadata', 'sample_queries']
+                        for key in keys_to_clear:
+                            if key in st.session_state:
+                                del st.session_state[key]
+                        
+                        # Clear semantic layer vector store
+                        try:
+                            enhanced_semantic_layer.clear_collections("default")
+                        except:
+                            pass
+                        
+                        # Store connection details
+                        st.session_state.connection_details = {
+                            'db_type': selected_db_type,
+                            'connection_name': connection_name,
+                            'params': {k: v for k, v in locals().items() 
+                                     if k not in ['test_connection', 'connect_and_continue', 'selected_db_type', 'success', 'final_success']}
+                        }
+                        st.session_state.connected = True
+                        st.session_state.wizard_step = 1
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to establish final connection. Please try again.")
             else:
                 st.error("❌ Connection failed. Please check your credentials and try again.")
     
@@ -156,6 +221,7 @@ class SetupWizard:
                 try:
                     # Get schema information
                     db_type = st.session_state.connection_details['db_type']
+                    connection_name = st.session_state.connection_details.get('connection_name', 'default')
                     
                     if db_type in ["PostgreSQL", "MySQL", "Oracle"]:
                         # Add option to include views
@@ -164,7 +230,7 @@ class SetupWizard:
                             value=False,
                             help="Check this if you want to include database views along with tables"
                         )
-                        schema_info = db_manager.get_table_schema(include_views=include_views)
+                        schema_info = db_manager.get_table_schema(connection_name=connection_name, include_views=include_views)
                     elif db_type == "DynamoDB":
                         tables = nosql_manager.get_dynamodb_tables()
                         schema_info = {}
@@ -497,29 +563,33 @@ class SetupWizard:
         """Test database connection"""
         try:
             if db_type == "PostgreSQL":
-                # Update settings temporarily for connection test
-                original_settings = {
-                    'host': settings.postgres_host,
-                    'port': settings.postgres_port,
-                    'db': settings.postgres_db,
-                    'user': settings.postgres_user,
-                    'password': settings.postgres_password
-                }
-                
-                # Temporarily update settings
-                settings.postgres_host = params.get('host', 'localhost')
-                settings.postgres_port = params.get('port', 5432)
-                settings.postgres_db = params.get('database', '')
-                settings.postgres_user = params.get('username', '')
-                settings.postgres_password = params.get('password', '')
-                
-                success = db_manager.connect("postgresql")
-                
-                # Restore original settings
-                for key, value in original_settings.items():
-                    setattr(settings, f'postgres_{key}', value)
-                
-                return success
+                # Check if using predefined database
+                if hasattr(st.session_state, 'selected_predefined_db'):
+                    return db_manager.connect_predefined(st.session_state.selected_predefined_db, "default")
+                else:
+                    # Update settings temporarily for connection test
+                    original_settings = {
+                        'host': settings.postgres_host,
+                        'port': settings.postgres_port,
+                        'db': settings.postgres_db,
+                        'user': settings.postgres_user,
+                        'password': settings.postgres_password
+                    }
+                    
+                    # Temporarily update settings
+                    settings.postgres_host = params.get('host', 'localhost')
+                    settings.postgres_port = params.get('port', 5432)
+                    settings.postgres_db = params.get('database', '')
+                    settings.postgres_user = params.get('username', '')
+                    settings.postgres_password = params.get('password', '')
+                    
+                    success = db_manager.connect("postgresql")
+                    
+                    # Restore original settings
+                    for key, value in original_settings.items():
+                        setattr(settings, f'postgres_{key}', value)
+                    
+                    return success
                 
             elif db_type == "MySQL":
                 settings.mysql_host = params.get('host', 'localhost')
