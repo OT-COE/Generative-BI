@@ -5,7 +5,7 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from config.settings import settings
 import logging
 
