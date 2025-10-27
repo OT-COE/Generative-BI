@@ -1,7 +1,8 @@
 import os
+import json
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, Dict
 
 load_dotenv()
 
@@ -36,7 +37,21 @@ class Settings(BaseSettings):
     embedding_model: str = "all-MiniLM-L6-v2"
     chat_model: str = "openai/gpt-oss-120b"
     
+    
+    def get_predefined_databases(self) -> Dict[str, str]:
+        """Parse predefined databases from environment variable"""
+        predefined_db_json = os.getenv("PREDEFINED_DATABASES", "{}")
+        try:
+            return json.loads(predefined_db_json)
+        except json.JSONDecodeError:
+            return {}
+    
+    @property
+    def predefined_databases(self) -> Dict[str, str]:
+        return self.get_predefined_databases()
+    
     class Config:
         env_file = ".env"
+        extra = "allow"
 
 settings = Settings()
