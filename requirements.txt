@@ -4,7 +4,6 @@ langgraph
 langchain-groq
 langchain-community
 langchain-core
-langchain-core
 sqlalchemy
 psycopg2-binary
 pymysql
