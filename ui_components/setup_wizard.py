@@ -193,8 +193,9 @@ class SetupWizard:
                         # Clear semantic layer vector store
                         try:
                             enhanced_semantic_layer.clear_collections("default")
-                        except:
-                            pass
+                        except Exception as e:
+                            st.error(f"Error clearing semantic layer collections: {str(e)}")
+                            
                         
                         # Store connection details
                         st.session_state.connection_details = {
@@ -832,3 +833,4 @@ class SetupWizard:
 
 # Global instance
 setup_wizard = SetupWizard()
+
