@@ -93,41 +93,17 @@ class SetupWizard:
                 predefined_dbs = settings.predefined_databases
                 
                 if predefined_dbs:
-                    st.info("🎯 Select from predefined databases or enter custom connection details")
-                    
-                    use_predefined = st.radio(
-                        "Connection method:",
-                        ["📋 Select from  databases"],
-                        key="pg_connection_method"
+                    selected_db = st.selectbox(
+                        "Select Database:",
+                        list(predefined_dbs.keys()),
+                        key="predefined_db_selection"
                     )
                     
-                    if use_predefined == "📋 Select from  databases":
-                        selected_db = st.selectbox(
-                            "Select Database:",
-                            list(predefined_dbs.keys()),
-                            key="predefined_db_selection"
-                        )
-                        
-                        # Connection info is available but not displayed for security
-                        
-                        # Store selection for connection test
-                        st.session_state.selected_predefined_db = selected_db
-                        
-                    else:
-                        # Original custom connection fields
-                        host = st.text_input("Host", value=settings.postgres_host or "localhost")
-                        port = st.number_input("Port", value=settings.postgres_port or 5432, min_value=1, max_value=65535)
-                        database = st.text_input("Database", value=settings.postgres_db or "")
-                        username = st.text_input("Username", value=settings.postgres_user or "")
-                        password = st.text_input("Password", type="password")
+                    # Store selection for connection test
+                    st.session_state.selected_predefined_db = selected_db
                 else:
-                    # No predefined databases, show custom fields
-                    st.warning("No predefined databases found. Please enter connection details.")
-                    host = st.text_input("Host", value=settings.postgres_host or "localhost")
-                    port = st.number_input("Port", value=settings.postgres_port or 5432, min_value=1, max_value=65535)
-                    database = st.text_input("Database", value=settings.postgres_db or "")
-                    username = st.text_input("Username", value=settings.postgres_user or "")
-                    password = st.text_input("Password", type="password")
+                    st.error("❌ No predefined databases configured. Please contact administrator.")
+                    return
                 
             elif selected_db_type == "MySQL":
                 host = st.text_input("Host", value=settings.mysql_host or "localhost")
