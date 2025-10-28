@@ -97,7 +97,7 @@ class SetupWizard:
                     
                     use_predefined = st.radio(
                         "Connection method:",
-                        ["📋 Select from predefined databases", "✏️ Enter custom details"],
+                        ["📋 Select from predefined databases"],
                         key="pg_connection_method"
                     )
                     
