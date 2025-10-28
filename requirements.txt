@@ -3,6 +3,7 @@ langchain
 langgraph
 langchain-groq
 langchain-community
+langchain-core
 sqlalchemy
 psycopg2-binary
 pymysql
@@ -22,3 +23,5 @@ faiss-cpu
 tiktoken
 boto3
 botocore
+
+

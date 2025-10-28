@@ -7,7 +7,7 @@ import pandas as pd
 import logging
 from config.settings import settings
 from langchain_groq import ChatGroq
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -521,6 +521,33 @@ class EnhancedSemanticLayer:
             }
         
         return enhanced_metadata
+    
+    def clear_collections(self, connection_name: str = "default"):
+        """Clear semantic layer collections for a connection"""
+        try:
+            # Clear all collections to ensure complete reset
+            try:
+                collections = self.client.list_collections()
+                for collection in collections:
+                    self.client.delete_collection(collection.name)
+                logger.info(f"Cleared all semantic layer collections")
+            except Exception as e:
+                logger.warning(f"Error clearing collections: {e}")
+            
+            # Clear local cache completely
+            self.collections.clear()
+            
+            # Reinitialize client to ensure clean state
+            try:
+                self.client = chromadb.PersistentClient(
+                    path=settings.chroma_persist_directory,
+                    settings=ChromaSettings(anonymized_telemetry=False)
+                )
+            except Exception as e:
+                logger.warning(f"Error reinitializing client: {e}")
+                
+        except Exception as e:
+            logger.error(f"Failed to clear collections: {str(e)}")
 
 # Global instance
 enhanced_semantic_layer = EnhancedSemanticLayer()
