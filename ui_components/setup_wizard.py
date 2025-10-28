@@ -97,11 +97,11 @@ class SetupWizard:
                     
                     use_predefined = st.radio(
                         "Connection method:",
-                        ["📋 Select from predefined databases"],
+                        ["📋 Select from  databases"],
                         key="pg_connection_method"
                     )
                     
-                    if use_predefined == "📋 Select from predefined databases":
+                    if use_predefined == "📋 Select from  databases":
                         selected_db = st.selectbox(
                             "Select Database:",
                             list(predefined_dbs.keys()),
