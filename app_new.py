@@ -161,7 +161,7 @@ def initialize_session_state():
             enhanced_semantic_layer.clear_collections()
             st.session_state.semantic_cleared = True
         except:
-            pass
+            logger.warning("Failed to clear semantic layer collections on initialization.")
 
 def main():
     """Main application entry point"""
@@ -185,7 +185,7 @@ def main():
     with col2:
         st.markdown(
             "<div style='text-align: center; color: #666; font-size: 0.9rem;'>"
-            "🚀 <strong>GenBI</strong> - Powered by LangChain, LangGraph, Groq & Streamlit<br>"
+            "🚀 <strong>GenBI</strong> - Powered by OpsTree Global<br>"
             "Making data accessible through natural language"
             "</div>", 
             unsafe_allow_html=True
