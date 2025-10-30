@@ -120,31 +120,48 @@ def initialize_session_state():
     # Core application state
     if 'app_initialized' not in st.session_state:
         st.session_state.app_initialized = True
+    
+    # Always ensure these critical variables exist
+    if 'connected' not in st.session_state:
         st.session_state.connected = False
+    if 'schema_loaded' not in st.session_state:
         st.session_state.schema_loaded = False
+    if 'semantic_layer_built' not in st.session_state:
         st.session_state.semantic_layer_built = False
+    if 'query_history' not in st.session_state:
         st.session_state.query_history = []
+    if 'current_result' not in st.session_state:
         st.session_state.current_result = None
-        
-        # Wizard state
+    
+    # Wizard state - always ensure these exist
+    if 'wizard_step' not in st.session_state:
         st.session_state.wizard_step = 0
+    if 'wizard_completed' not in st.session_state:
         st.session_state.wizard_completed = False
+    if 'show_query_interface' not in st.session_state:
         st.session_state.show_query_interface = False
-        
-        # Connection state
+    
+    # Connection state
+    if 'connection_details' not in st.session_state:
         st.session_state.connection_details = {}
+    if 'schema_info' not in st.session_state:
         st.session_state.schema_info = {}
+    if 'semantic_method' not in st.session_state:
         st.session_state.semantic_method = None
-        
-        # UI state
+    
+    # UI state
+    if 'selected_db_type' not in st.session_state:
         st.session_state.selected_db_type = "PostgreSQL"
+    if 'sample_queries' not in st.session_state:
         st.session_state.sample_queries = []
-        
-        # Clear all semantic layer data on app start
+    
+    # Clear all semantic layer data on first app start only
+    if st.session_state.app_initialized and not st.session_state.get('semantic_cleared', False):
         try:
             enhanced_semantic_layer.clear_collections()
+            st.session_state.semantic_cleared = True
         except:
-            pass
+            logger.warning("Failed to clear semantic layer collections on initialization.")
 
 def main():
     """Main application entry point"""
@@ -155,7 +172,7 @@ def main():
                 unsafe_allow_html=True)
     
     # Determine which interface to show
-    if st.session_state.wizard_completed and st.session_state.show_query_interface:
+    if st.session_state.get('wizard_completed', False) and st.session_state.get('show_query_interface', False):
         # Show main query interface
         query_interface.render_query_interface()
     else:
@@ -168,7 +185,7 @@ def main():
     with col2:
         st.markdown(
             "<div style='text-align: center; color: #666; font-size: 0.9rem;'>"
-            "🚀 <strong>GenBI</strong> - Powered by LangChain, LangGraph, Groq & Streamlit<br>"
+            "🚀 <strong>GenBI</strong> - Powered by OpsTree Global<br>"
             "Making data accessible through natural language"
             "</div>", 
             unsafe_allow_html=True

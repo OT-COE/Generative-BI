@@ -28,8 +28,37 @@ class SetupWizard:
         if 'wizard_completed' not in st.session_state:
             st.session_state.wizard_completed = False
         
-        # Show progress
-        self._show_progress()
+        # Add reconnect button if already connected
+        if st.session_state.get('connected', False):
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("🔄 Reconnect Database", type="secondary", use_container_width=True):
+                    # Reset connection state
+                    st.session_state.connected = False
+                    st.session_state.wizard_completed = False
+                    st.session_state.show_query_interface = False
+                    st.session_state.wizard_step = 0
+                    st.session_state.schema_loaded = False
+                    st.session_state.semantic_layer_built = False
+                    
+                    # Clear cached data including query history
+                    keys_to_clear = ['schema_analysis_done', 'schema_info', 'semantic_method', 'generated_metadata', 'sample_queries', 'query_history', 'current_result', 'main_query_input']
+                    for key in keys_to_clear:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    
+                    # Close existing connections
+                    try:
+                        db_manager.close_connections()
+                        enhanced_semantic_layer.clear_collections()
+                    except:
+                        pass
+                    
+                    st.rerun()
+        
+        # Show progress (only if not showing reconnect option)
+        if not st.session_state.get('connected', False) or st.session_state.wizard_step > 0:
+            self._show_progress()
         
         # Render current step
         if st.session_state.wizard_step == 0:
@@ -160,8 +189,8 @@ class SetupWizard:
                         connection_name = "default"
                     
                     if final_success:
-                        # Clear any cached schema and semantic layer information
-                        keys_to_clear = ['schema_analysis_done', 'schema_info', 'semantic_layer_built', 'semantic_method', 'generated_metadata', 'sample_queries']
+                        # Clear any cached schema, semantic layer, and query information
+                        keys_to_clear = ['schema_analysis_done', 'schema_info', 'semantic_layer_built', 'semantic_method', 'generated_metadata', 'sample_queries', 'query_history', 'current_result', 'main_query_input']
                         for key in keys_to_clear:
                             if key in st.session_state:
                                 del st.session_state[key]
@@ -277,10 +306,16 @@ class SetupWizard:
         else:
             st.success("✅ Schema complexity looks manageable. All semantic layer options will work well.")
         
-        # Continue button
-        if st.button("➡️ Continue to Semantic Setup", type="primary", use_container_width=True):
-            st.session_state.wizard_step = 2
-            st.rerun()
+        # Navigation buttons
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("⬅️ Back to Connection", use_container_width=True):
+                st.session_state.wizard_step = 0
+                st.rerun()
+        with col2:
+            if st.button("➡️ Continue to Semantic Setup", type="primary", use_container_width=True):
+                st.session_state.wizard_step = 2
+                st.rerun()
     
     def _render_table_info(self, table_name: str, table_info: Dict[str, Any]):
         """Render information for a single table"""
@@ -396,6 +431,11 @@ class SetupWizard:
         
         if generate_semantic:
             self._execute_automatic_semantic_generation(business_domain, include_examples)
+        
+        # Back button
+        if st.button("⬅️ Back to Schema Analysis", use_container_width=True):
+            st.session_state.wizard_step = 1
+            st.rerun()
     
     def _render_manual_semantic_setup(self):
         """Render manual semantic setup"""
@@ -445,6 +485,11 @@ class SetupWizard:
                         
             except Exception as e:
                 st.error(f"❌ Error reading file: {str(e)}")
+        
+        # Back button
+        if st.button("⬅️ Back to Schema Analysis", use_container_width=True):
+            st.session_state.wizard_step = 1
+            st.rerun()
     
     def _render_hybrid_semantic_setup(self):
         """Render hybrid semantic setup"""
@@ -496,6 +541,11 @@ class SetupWizard:
             if st.button("🏗️ Build Hybrid Semantic Layer", type="primary", use_container_width=True):
                 # Use the full generated metadata (not just the edited sample)
                 self._execute_hybrid_semantic_build(edit_df)
+        
+        # Back button
+        if st.button("⬅️ Back to Schema Analysis", use_container_width=True):
+            st.session_state.wizard_step = 1
+            st.rerun()
     
     def _step_ready_to_query(self):
         """Step 4: Ready to Query"""
@@ -530,11 +580,17 @@ class SetupWizard:
             - "What's the average order value by customer type?"
             """)
         
-        # Start querying button
-        if st.button("🚀 Start Querying Your Data", type="primary", use_container_width=True):
-            st.session_state.wizard_completed = True
-            st.session_state.show_query_interface = True
-            st.rerun()
+        # Navigation buttons
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("⬅️ Back to Semantic Setup", use_container_width=True):
+                st.session_state.wizard_step = 2
+                st.rerun()
+        with col2:
+            if st.button("🚀 Start Querying Your Data", type="primary", use_container_width=True):
+                st.session_state.wizard_completed = True
+                st.session_state.show_query_interface = True
+                st.rerun()
     
     def _test_database_connection(self, db_type: str, params: dict) -> bool:
         """Test database connection"""
