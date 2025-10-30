@@ -15,9 +15,21 @@ class QueryInterface:
     
     def render_query_interface(self):
         """Render the main query interface"""
-        # Header
-        st.markdown('<h1 class="main-header">🤖 Ask Your Data Anything</h1>', 
-                    unsafe_allow_html=True)
+        # Header with back button
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.markdown('<h1 class="main-header">🤖 Ask Your Data Anything</h1>', 
+                        unsafe_allow_html=True)
+        with col2:
+            if st.button("⬅️ Back to Setup", use_container_width=True):
+                st.session_state.wizard_completed = False
+                st.session_state.show_query_interface = False
+                st.session_state.wizard_step = 3  # Go back to Ready to Query step
+                # Clear query history and results
+                for key in ['query_history', 'current_result', 'main_query_input']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.rerun()
         
         # Connection status bar
         self._render_status_bar()
@@ -477,11 +489,12 @@ class QueryInterface:
     
     def _reset_to_wizard(self):
         """Reset to wizard mode"""
-        # Clear all session state related to connection and setup
+        # Clear all session state related to connection, setup, and queries
         keys_to_clear = [
             'connected', 'schema_loaded', 'semantic_layer_built', 
             'wizard_step', 'wizard_completed', 'show_query_interface',
-            'connection_details', 'schema_info', 'semantic_method'
+            'connection_details', 'schema_info', 'semantic_method',
+            'query_history', 'current_result', 'main_query_input'
         ]
         
         for key in keys_to_clear:
