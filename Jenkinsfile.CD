@@ -1,0 +1,39 @@
+@Library('HelmUtils') _
+def helm_deploy = new opstree.cd.templates.helm.helm_deployment()
+
+node {
+    helm_deploy.call([
+        enable_jenkins_build_param_override: true,
+
+        clean_workspace: true,
+        ignore_clean_workspace_failure: false,
+        delete_dirs: false,
+        clean_when_build_aborted: true,
+        clean_when_build_failed: true,
+        clean_when_not_built: true,
+        clean_when_build_succeed: true,
+        clean_when_build_unstable: true,
+
+        repo_https_url: 'https://github.com/OT-COE/Generative-BI.git',
+        repo_ssh_url: 'git@github.com:OT-COE/Generative-BI.git',
+        repo_branch: '3-add-helm-support-file-to-deploy-on-k8s',
+        repo_url_type: 'http',
+        jenkins_git_creds_id: 'Prashantdev780',
+
+        notification_enabled: true,
+        webhook_url_creds_id: 'ot_slack_webhook',
+        notification_channel: 'slack',
+        slack_channel: 'jenkins',
+        chart_name: './helm',
+        release_name: 'gen-bi',
+        namespace: 'ai-coe',
+        values: './helm/values.yaml',
+        atomic: true,
+        timeout: '5m',
+        wait: true,
+        create_namespace: true,
+        force: false,
+
+        kubeconfig_credential_id: 'kubeconfig-toolhub',
+    ])
+}
